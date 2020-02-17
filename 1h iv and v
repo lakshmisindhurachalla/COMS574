@@ -1,0 +1,71 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics import r2_score
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn import metrics
+from array import array
+from numpy import polyfit
+
+def getGroundTruth(dataSamples):
+    y = []
+    for x in dataSamples['x']:
+       y.append(getMSE(dataSamples, 3))
+    return y
+
+def groundTruth(x):
+    coef_ = getGroundTruthCoef()
+    return coef_[0]*x**0 + coef_[1]*x**1 + coef_[2]*x**2 + coef_[3]*x**3
+
+def getGroundTruthCoef():
+    X=np.array([[0,10],[5,5],[8,12],[12,0]])
+    x=np.array(X[:,0]).reshape(-1,1)
+    y=np.array(X[:,1])
+    poly_reg = PolynomialFeatures(degree=3)
+    X_poly = poly_reg.fit_transform(x)
+    lin_reg = LinearRegression(fit_intercept=False)
+    lin_reg.fit(X_poly, y)
+    return lin_reg.coef_
+    
+    
+def getDataSamples():
+    X = np.random.uniform(0,15,30)
+    Y = groundTruth(X) + np.random.default_rng().normal(0, 10)
+    return { 'x': X, 'y': Y}
+
+def getPolynomials(x, y, i):
+    polyfit(x, y, i)
+    return 0
+
+def getMSE(dataSamples, order):
+    x_train, x_test, y_train, y_test = train_test_split(dataSamples['x'], dataSamples['y'], train_size = 0.83, test_size = 0.17, random_state = 10)
+    reg = np.poly1d(polyfit(x_train, y_train, order))
+    prediction = reg(x_train)
+    return metrics.mean_squared_error(y_train, prediction)
+
+def getMSE_val(dataSamples, order):
+    x_train, x_test, y_train, y_test = train_test_split(dataSamples['x'], dataSamples['y'], train_size = 0.83, test_size = 0.17, random_state = 10)
+    reg = np.poly1d(polyfit(x_train, y_train, order))
+    prediction = reg(x_test)
+    return metrics.mean_squared_error(y_test, prediction)
+
+dataSamples = getDataSamples()
+
+MSERange = []
+MSERange_val = []
+for i in range (1,31):
+    MSERange.append(getMSE(dataSamples, i))
+    MSERange_val.append(getMSE_val(dataSamples, i))
+
+print(MSERange)
+plt.title(" data loss Comparision")
+plt.plot( MSERange, '-r', label='Training data loss' )
+plt.plot( MSERange_val, label='Validation data loss' )
+#  plt.plot(dataSamples['x'], getGroundTruth(dataSamples) , '-g', label='Ground Truth' )
+plt.axhline(y = getMSE(dataSamples, 3), color='g', label='Ground Truth')
+plt.ylabel('MSE')
+plt.xlabel('Order of polynomial')
+plt.legend()
